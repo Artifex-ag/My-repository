@@ -1,0 +1,29 @@
+{
+  "name": "todos",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": "^8.9.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Artifex-ag/My-repository.git"
+  },
+  "author": "artifex-ag@mail.ru",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Artifex-ag/My-repository/issues"
+  },
+  "preferGlobal": true,
+  "bin": "./index.js",
+  "homepage": "https://github.com/Artifex-ag/My-repository#readme",
+  "dependencies": {
+    "commander": "2.14.1",
+    "inquirer": "5.1.0"
+  }
+}
