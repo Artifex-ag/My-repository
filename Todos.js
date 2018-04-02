@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 const program = require('commander');
 const { prompt } = require('inquirer');
 const fs = require('fs');
@@ -16,14 +17,13 @@ const { O_APPEND, O_RDONLY, O_CREAT } = fs.constants;
 const fsOpen = util.promisify(fs.open);
 const fsReadFile = util.promisify(fs.readFile);
 const fsWriteFile = util.promisify(fs.writeFile);
-
-
-
+let readArray = {};
 
 function getAllTodos() {
       return fsReadFile(STORAGE_PATH, { encoding: 'utf8', flag: O_RDONLY | O_CREAT })
          .then((data) => {
                let jsonText = data;
+               readArray=jsonText;
                if (!jsonText) jsonText = '{}';
                return JSON.parse(jsonText);
              })
@@ -39,8 +39,6 @@ function saveAllTodos(todos) {
                fsWriteFile(STORAGE_PATH, JSON.stringify({ todos }));
              });
      }
-
-
 
 
 function findTodoIndex(id, todos) {
@@ -72,7 +70,7 @@ function guid() {
              createdDate: now,
              createdByUserId: ACCOUNT_ID,
              id: guid(),
-             isLiked: false,
+             LikeStatus: 'none',
              lastUpdateDate: now,
              lastUpdateByUserId: ACCOUNT_ID,
              ...data,
@@ -96,8 +94,6 @@ function guid() {
 
 function createTodoItem(data) {
        let todoId;
-
-
        return getAllTodos()
          .then((todos) => {
                const todo = createTodo(data);
@@ -109,18 +105,33 @@ function createTodoItem(data) {
      }
 
 
+function readTodoItem(id) {
+    return getAllTodos()
+        .then((todos) => {
+            const index = findTodoIndex(id, todos);
+            if (index !==-1){
+                const target = todos[index];
+                console.log(target);
+            } else{
+                console.log('TODO item is not found');
+            }
+            })
+                .then(() => id);
+        }
+
+
  function updateTodoItem(id, change) {
        return getAllTodos()
          .then((todos) => {
                const index = findTodoIndex(id, todos);
-               const target = todos[index];
-               const result = [...todos];
-
-
-               result.splice(index, 1, updateTodo(change, target));
-
-
-               return saveAllTodos(result);
+             if (index !==-1){
+                 const target = todos[index];
+                 const result = [...todos];
+                 result.splice(index, 1, updateTodo(change, target));
+                 return saveAllTodos(result);
+             } else {
+                 console.log('TODO item is not found');
+             }
              })
          .then(() => id);
      }
@@ -130,17 +141,15 @@ function createTodoItem(data) {
        return getAllTodos()
          .then((todos) => {
                const index = findTodoIndex(id, todos);
-               const result = [...todos];
-
-
-               const removedItems = result.splice(index, 1);
-
-
-               return saveAllTodos(result).then(() => removedItems.length);
+               if (index !==-1){
+                   const result = [...todos];
+                   const removedItems = result.splice(index, 1);
+                   return saveAllTodos(result).then(() => removedItems.length);
+               } else{
+                   console.log('TODO item is not found');
+               }
              });
      }
-
-
 
 
 const createQuestions = [
@@ -180,9 +189,7 @@ const commentQuestions = [
  ];
 
 
-
-
- program
+program
    .command('create')
    .description('Create new TODO item')
    .action(() => {
@@ -194,6 +201,16 @@ const commentQuestions = [
                });
        });
 
+program
+    .command('read <id>')
+    .description('Read TODO item')
+    .action((id) => {
+            readTodoItem(id)
+            .then(print)
+            .catch((e) => {
+                throw e;
+            });
+    });
 
 program
    .command('update <id>')
@@ -226,24 +243,33 @@ program
    .alias('ls')
    .description('List all TODOs')
    .action(() => {
-         getAllTodos().then(print)
-       });
+         getAllTodos().then(print)});
 
 
 program
    .command('like <id>')
    .description('Like TODO item')
    .action((id) => {
-         updateTodoItem(id, { isLiked: true })
+         updateTodoItem(id, { LikeStatus: 'liked' })
            .then(print)
            .catch((e) => {
                  throw e;
                });
        });
 
+program
+    .command('unlike <id>')
+    .description('Unlike TODO item')
+    .action((id) => {
+        updateTodoItem(id, { LikeStatus: 'unliked' })
+            .then(print)
+            .catch((e) => {
+                throw e;
+            });
+    });
 
 program
-   .command('comment <id>')
+   .command ('comment <id>')
    .description('Comment TODO item')
    .action((id) => {
          prompt(commentQuestions)
